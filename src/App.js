@@ -18,12 +18,16 @@ function resetMoreInfo() {
   const newMoreInfo = Array(moreInfo.length).fill(false);
   setMoreInfo(newMoreInfo);
 }
-function togglePlay(index){
-  setPlay((prevStates) =>{
-    const newStates = [...prevStates]
-    newStates[index] = !newStates[index]
-    return newStates
-  })
+function pressPause(index){
+  const newStates = Array(play.length).fill(false)
+  setPlay(newStates)
+}
+function pressPlay(index){
+    
+    const newStates = Array(play.length).fill(false)
+    newStates[index] = true
+    setPlay(newStates)
+
 }  
 function toggleInfo(index){
   setMoreInfo((prevStates) =>{
@@ -35,19 +39,17 @@ function toggleInfo(index){
  
   useEffect(() =>{
 
-var parameters = {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/x-www-form-urlencoded'
-  },
-  body: 'grant_type=client_credentials&client_id=' + CLIENT_ID + '&client_secret=' + CLIENT_SECRET
-}
-fetch( 'https://accounts.spotify.com/api/token', parameters)
-.then(result =>result.json())
-.then(json => {setAccessToken(json.access_token);})
-
-
-},[])
+    var parameters = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: 'grant_type=client_credentials&client_id=' + CLIENT_ID + '&client_secret=' + CLIENT_SECRET
+    }
+    fetch( 'https://accounts.spotify.com/api/token', parameters)
+    .then(result =>result.json())
+    .then(json => {setAccessToken(json.access_token);})
+  },[])
 
 //Search Artists Function
 async function search() {
@@ -161,22 +163,26 @@ return (
                 release_date = {track.album.release_date}
                 artists = {track.artists}
                 popularity = {track.popularity}
+                duration = {track.duration_ms}
                 />
             </ul>
+            {play[i] && <strong> Currently Playing </strong>}
           </Card.Body>
+          
+          
           <Card.Body>
            <div className="button-controls">
               <div className="more-info-btn">
                   <Button onClick={() =>toggleInfo(i)}>Collapse</Button>
                 </div>
-                {play[i] && (
-                  <div className='play-btn'>
-                    <Button onClick={() =>togglePlay(i)}>Play</Button>  
-                  </div>
-                )}
                 {!play[i] && (
                   <div className='play-btn'>
-                    <Button onClick={() =>togglePlay(i)}>Pause</Button>  
+                    <Button onClick={() =>pressPlay(i)}>Play</Button>  
+                  </div>
+                )}
+                {play[i] && (
+                  <div className='play-btn'>
+                    <Button onClick={() =>pressPause(i)}>Pause</Button>  
                   </div>
                 )}
            </div>
