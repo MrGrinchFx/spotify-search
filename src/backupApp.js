@@ -1,24 +1,47 @@
 import 'bootstrap/dist/css/bootstrap.min.css'
-import {Container, InputGroup, FormControl, Button} from 'react-bootstrap'
-
+import {Container, InputGroup, FormControl, Button, Card, Row} from 'react-bootstrap'
+import MoreInfo from './Pages/Components/songInfo'
 import './App.css';
 import { useState, useEffect} from 'react'
-import useSongContext from './Hooks/useSongContext'
-import SongCard from './Pages/Components/SongCard'
+
 
 function App() {
-  const {
-    resetMoreInfo,
-    resetPlaying,
-  } = useSongContext()
-  const CLIENT_ID = process.env.REACT_APP_CLIENT_ID
-  const CLIENT_SECRET=process.env.REACT_APP_CLIENT_SECRET
+  const CLIENT_ID = '7acfad3cd4c44f36bc670e1d3c6683c5'
+  const CLIENT_SECRET='63641ebfa7324ba9bbbc942b706e9800'
   const [ searchInput, setSearchInput] = useState('');
   const [ accessToken, setAccessToken] = useState('');
-  const [ tracksList, setTracksList] = useState([]);
+  const [ albumsList, setAlbumsList] = useState([]);
   const [errorMsg, setErrorMsg] = useState('');
+  const [play, setPlay] = useState([])
+  const [moreInfo, setMoreInfo] = useState([])
   const [searchMode, setSearchMode] = useState({recommendation : false , top_tracks : false}); // Variable to keep track of which search Mode to commence.
  
+function resetMoreInfo() { //
+  const newMoreInfo = Array(moreInfo.length).fill(false);
+  setMoreInfo(newMoreInfo);
+}
+function pressPause(index){ //
+  const newStates = Array(play.length).fill(false)
+  setPlay(newStates)
+}
+function pressPlay(index){//
+    
+    const newStates = Array(play.length).fill(false)
+    newStates[index] = true
+    setPlay(newStates)
+
+}  
+function toggleInfo(index){//
+  setMoreInfo((prevStates) =>{
+    const newStates = [...prevStates]
+    newStates[index] = !newStates[index]
+    return newStates
+  })
+}  
+function resetPlaying(){//
+  const newStates = Array(play.length).fill(false)
+  setPlay(newStates)
+}
  
   useEffect(() =>{
 
@@ -37,6 +60,7 @@ function App() {
 //Search Artists Function
 async function search() {
   setSearchInput('')
+  console.log(searchInput)
   resetMoreInfo();
   resetPlaying();
 try {
@@ -79,7 +103,7 @@ const json = await response.json();
 if (json.tracks.length === 0){
   throw new Error('This Artist has no Tracks')
 }
-setTracksList(json.tracks);
+setAlbumsList(json.tracks);
 
 setErrorMsg('')
 } catch (error) {
@@ -113,8 +137,74 @@ return (
     </InputGroup>
 </Container>
 
-{!errorMsg && <SongCard tracksList = {tracksList} />}
+{!errorMsg && 
+<Container>
+<Row className=' mx-2 row row-cols-4'>
+  {albumsList.map( (track, i) =>{
+  
+    return(
+      <Card key = {i} className = {'album-card'}>
+        {/*Front Page Section*/}
+        {!moreInfo[i] && 
+        <Container> 
+          <div className="song">
+            <Card.Img src = {track.album.images[0].url} />
+            <Card.Body>
+              <Card.Title>{track.name}</Card.Title>
+            </Card.Body>
+          </div>
+        
+          <Card.Body>
+            <div className="more-info-btn">
+              <Button onClick={() =>toggleInfo(i)}>More Info</Button>
+            </div>
+          </Card.Body>
+        </Container>
+        }
+        
+        {/*More Info Section*/}
+        {moreInfo[i] && 
+        <Container> 
+          <Card.Body className='more-info'>
+          <Card.Title>{track.name}</Card.Title>
+            <ul>
+              <MoreInfo name = {track.album.name}
+                release_date = {track.album.release_date}
+                artists = {track.artists}
+                popularity = {track.popularity}
+                duration = {track.duration_ms}
+                />
+            </ul>
+            {play[i] && <strong> Currently Playing </strong>}
+          </Card.Body>
+          
+          {/*controller buttons */}
+          <Card.Body>
+           <div className="button-controls">
+              <div className="more-info-btn">
+                  <Button onClick={() =>toggleInfo(i)}>Collapse</Button>
+                </div>
+                {!play[i] && (
+                  <div className='play-btn'>
+                    <Button onClick={() =>pressPlay(i)}>Play</Button>  
+                  </div>
+                )}
+                {play[i] && (
+                  <div className='play-btn'>
+                    <Button onClick={() =>pressPause(i)}>Pause</Button>  
+                  </div>
+                )}
+           </div>
+          </Card.Body>
+        </Container>}
+       
+      </Card>
+    )
+  })}
+ 
 
+</Row>
+</Container>}
 {errorMsg && <Container className = 'Error'>
   <strong>{errorMsg}</strong>
 </Container>}
