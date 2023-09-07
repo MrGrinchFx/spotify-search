@@ -17,9 +17,12 @@ function App() {
   const [ accessToken, setAccessToken] = useState('');
   const [ tracksList, setTracksList] = useState([]);
   const [errorMsg, setErrorMsg] = useState('');
-  const [searchMode, setSearchMode] = useState({recommendation : false , top_tracks : false}); // Variable to keep track of which search Mode to commence.
+  const modes = ['recommendation', 'top_tracks'];
+  const [modeIndex, setModeIndex] = useState(0);
  
- 
+  const toggleMode = () => {
+    setModeIndex((modeIndex + 1) % modes.length); // Cycle through searchmodes
+  };
   useEffect(() =>{
 
     var parameters = {
@@ -32,7 +35,7 @@ function App() {
     fetch( 'https://accounts.spotify.com/api/token', parameters)
     .then(result =>result.json())
     .then(json => {setAccessToken(json.access_token);})
-  },[])
+  },[CLIENT_ID, CLIENT_SECRET])
 
 //Search Artists Function
 async function search() {
@@ -70,23 +73,43 @@ var artistId = await fetch(`https://api.spotify.com/v1/search?q=${searchInput}&t
   
 
 // Obtain Top Tracks
-const response = await fetch(`https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`, searchParameter);
-if (!response.ok) {
-  throw new Error('Error fetching albums'); // Throw an error if the response is not OK
+if (modes[modeIndex] === 'top_tracks'){
+  topTracks(artistId, searchParameter)
+}
+else if (modes[modeIndex] === 'recommendation'){
+  getRecommendation(artistId, searchParameter)
 }
 
-const json = await response.json();
-if (json.tracks.length === 0){
-  throw new Error('This Artist has no Tracks')
-}
-setTracksList(json.tracks);
-
-setErrorMsg('')
 } catch (error) {
     console.error('An error occurred:', error.message);
     // Set an error state to display a message to the user
     setErrorMsg('An error occurred while searching for the artist or albums: ' + error.message);
   }
+}
+
+async function topTracks(artistId, searchParameter){
+  const response = await fetch(`https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`, searchParameter);
+    if (!response.ok) {
+      throw new Error('Error fetching albums'); // Throw an error if the response is not OK
+    }
+    const json = await response.json();
+    if (json.tracks.length === 0){
+      throw new Error('This Artist has no Tracks')
+    }
+    setTracksList(json.tracks);
+    setErrorMsg('')
+}
+async function getRecommendation(artistId, searchParameter){
+  const response = await fetch(`https://api.spotify.com/v1/recommendations?seed_artists=${artistId}`, searchParameter)
+  if(!response.ok){
+    throw new Error('Error fetching tracks')
+  }
+  const json = await response.json();
+  if(json.tracks.length === 0){
+    throw new Error('This Artist has no Tracks')
+  }
+  setTracksList(json.tracks)
+  setErrorMsg('')
 }
 return (
 <div className="search">
@@ -110,7 +133,12 @@ return (
           search();
           
         }}>Search</Button>
+      <Button onClick={toggleMode}>
+        {modes[modeIndex] === 'recommendation' ? 'For Recommendations' : 'For Top Tracks'}
+      </Button>
     </InputGroup>
+    
+    
 </Container>
 
 {!errorMsg && <SongCard tracksList = {tracksList} />}
